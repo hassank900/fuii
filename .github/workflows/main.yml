@@ -1,0 +1,25 @@
+name: Windows RDP via Cloudflare Tunnel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Download Cloudflare Tunnel
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile "cloudflared.exe"
+
+      - name: Set Windows RDP Credentials
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+          net user runneradmin P@ssw0rd1234! /add
+          net localgroup administrators runneradmin /add
+
+      - name: Start Cloudflare Tunnel for RDP
+        run: |
+          ./cloudflared.exe tunnel --url rdp://localhost:3389
