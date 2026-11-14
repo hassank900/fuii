@@ -17,9 +17,20 @@ jobs:
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
-          net user runneradmin P@ssw0rd1234! /add
+          if (-not (Get-LocalUser -Name "runneradmin" -ErrorAction SilentlyContinue)) {
+              net user runneradmin P@ssw0rd1234! /add
+          }
           net localgroup administrators runneradmin /add
 
       - name: Start Cloudflare Tunnel for RDP
         run: |
-          ./cloudflared.exe tunnel --url rdp://localhost:3389
+          Start-Process -NoNewWindow -FilePath ".\cloudflared.exe" -ArgumentList "tunnel --url rdp://localhost:3389"
+
+      - name: Keep Alive for Testing
+        run: |
+          $i = 0
+          while ($i -lt 20) {
+              Write-Host "البيئة تعمل منذ $($i * 6) دقائق..."
+              Start-Sleep -Seconds 360
+              $i++
+          }
